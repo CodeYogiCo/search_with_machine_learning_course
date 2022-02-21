@@ -240,6 +240,7 @@
         },
         "longDescription":{
            "type":"text",
+           "analyzer": "english",
            "fields":{
               "keyword":{
                  "type":"keyword",
@@ -366,6 +367,7 @@
         },
         "shortDescription":{
            "type":"text",
+           "analyzer": "english",
            "fields":{
               "keyword":{
                  "type":"keyword",
