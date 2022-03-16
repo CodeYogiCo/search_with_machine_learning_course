@@ -1,0 +1,20 @@
+ headphones
+ televisions
+ gaming consoles
+ smartwatch
+ washing machines
+ sony
+ apple
+ whirlpool
+ samsung
+ bosch
+ macbook
+ thinkpad
+ ipad
+ iphone
+ iwatch
+ black
+ red
+ waterproof
+ wireless
+ bluetooth

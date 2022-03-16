@@ -4,7 +4,11 @@
 from flask import (
     Blueprint, redirect, render_template, request, url_for, current_app
 )
-
+import string
+import nltk
+nltk.download('punkt')
+from nltk.stem import SnowballStemmer
+stemmer = SnowballStemmer("english")
 from week4.opensearch import get_opensearch
 
 import week4.utilities.query_utils as qu
@@ -12,7 +16,10 @@ import week4.utilities.ltr_utils as lu
 
 bp = Blueprint('search', __name__, url_prefix='/search')
 
-
+def transform_query(query):
+    cleaned = ''.join([i for i in query.lower() if i not in string.punctuation])
+    tokens = nltk.word_tokenize(cleaned)
+    return " ".join([stemmer.stem(token) for token in tokens])
 # Process the filters requested by the user and return a tuple that is appropriate for use in: the query, URLs displaying the filter and the display of the applied filters
 # filters -- convert the URL GET structure into an OpenSearch filter query
 # display_filters -- return an array of filters that are applied that is appropriate for display
@@ -57,9 +64,14 @@ def process_filters(filters_input):
     return filters, display_filters, applied_filters
 
 def get_query_category(user_query, query_class_model):
-    print("IMPLEMENT ME: get_query_category")
-    return None
-
+    filtered_categories=[]
+    transformed_query = transform_query(user_query)
+    categories, scores = query_class_model.predict(transformed_query, 5)
+    clean_cat = [cat.replace("__label__", "") for cat in categories]
+    for cat,score in zip(clean_cat, scores):
+         if score>0.5:
+             filtered_categories.append(cat)
+    return filtered_categories
 
 @bp.route('/query', methods=['GET', 'POST'])
 def query():
@@ -137,8 +149,8 @@ def query():
 
     query_class_model = current_app.config["query_model"]
     query_category = get_query_category(user_query, query_class_model)
-    if query_category is not None:
-        print("IMPLEMENT ME: add this into the filters object so that it gets applied at search time.  This should look like your `term` filter from week 1 for department but for categories instead")
+    if user_query!="*" and query_category :
+        query_obj["query"]["bool"]["filter"].append({"terms": {"categoryPathIds": query_category}}) 
     #print("query obj: {}".format(query_obj))
     response = opensearch.search(body=query_obj, index=current_app.config["index_name"], explain=explain)
     # Postprocess results here if you so desire
@@ -171,5 +183,4 @@ def get_click_prior(user_query):
             # nothing to do here, we just haven't seen this query before in our training set
     print("prior: %s" % click_prior)
     return click_prior
-
 
